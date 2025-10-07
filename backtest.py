@@ -1,41 +1,49 @@
 import pandas as pd
 
 
-def backtest_strategy(
-    df: pd.DataFrame,
-    initial_balance: float = 10000,
-    transaction_fee: float = 0.00125  # 0.125% per trade
-) -> float:
+def backtest_strategy(df: pd.DataFrame, initial_balance: float = 10000,
+                      transaction_fee: float = 0.00125,
+                      stop_loss: float = None, take_profit: float = None) -> pd.Series:
     """
-    Run a simple backtest using generated buy/sell signals.
+    Backtest a trading strategy.
 
     Args:
-        df (pd.DataFrame): DataFrame containing 'Close', 'Buy_Signal', and 'Sell_Signal' columns.
-        initial_balance (float, optional): Starting capital. Defaults to 10,000.
-        transaction_fee (float, optional): Proportional transaction fee per trade (e.g., 0.00125 = 0.125%). Defaults to 0.00125.
+        df (pd.DataFrame): DataFrame with Close, Buy_Signal, Sell_Signal.
+        initial_balance (float): Starting capital.
+        transaction_fee (float): Fee per trade.
+        stop_loss (float, optional): Stop-loss in decimal (e.g., 0.02 = 2%).
+        take_profit (float, optional): Take-profit in decimal.
 
     Returns:
-        float: Final portfolio value.
+        pd.Series: Portfolio value over time.
     """
     balance = initial_balance
     position = 0.0
+    portfolio_values = []
 
     for i in range(len(df)):
-        close_price = df.loc[i, 'Close']
+        price = df.loc[i, 'Close']
 
-        # Buy signal: enter long if no position
+        # Buy
         if df.loc[i, 'Buy_Signal'] and position == 0:
-            position = (balance * (1 - transaction_fee)) / close_price
+            position = (balance * (1 - transaction_fee)) / price
+            entry_price = price
             balance = 0.0
 
-        # Sell signal: exit position
+        # Sell
         elif df.loc[i, 'Sell_Signal'] and position > 0:
-            balance = position * close_price * (1 - transaction_fee)
+            balance = position * price * (1 - transaction_fee)
             position = 0.0
 
-    # Final portfolio value
-    final_value = balance + (position * df.iloc[-1]['Close'])
-    print(f"Final portfolio value: ${final_value:,.2f}")
+        # Stop-loss / Take-profit
+        elif position > 0:
+            if stop_loss and price <= entry_price * (1 - stop_loss):
+                balance = position * price * (1 - transaction_fee)
+                position = 0.0
+            elif take_profit and price >= entry_price * (1 + take_profit):
+                balance = position * price * (1 - transaction_fee)
+                position = 0.0
 
-    return final_value
+        portfolio_values.append(balance + position * price)
 
+    return pd.Series(portfolio_values, index=df.index)
