@@ -1,9 +1,13 @@
 import pandas as pd
 
 
-def backtest_strategy(df: pd.DataFrame, initial_balance: float = 10000,
-                      transaction_fee: float = 0.00125,
-                      stop_loss: float = None, take_profit: float = None) -> pd.Series:
+def backtest_strategy(
+    df: pd.DataFrame,
+    initial_balance: float = 10000,
+    transaction_fee: float = 0.00125,
+    stop_loss: float = None,
+    take_profit: float = None
+) -> pd.Series:
     """
     Backtest a trading strategy.
 
@@ -22,16 +26,16 @@ def backtest_strategy(df: pd.DataFrame, initial_balance: float = 10000,
     portfolio_values = []
 
     for i in range(len(df)):
-        price = df.loc[i, 'Close']
+        price = df.iloc[i]['Close']
 
         # Buy
-        if df.loc[i, 'Buy_Signal'] and position == 0:
+        if df.iloc[i]['Buy_Signal'] and position == 0:
             position = (balance * (1 - transaction_fee)) / price
             entry_price = price
             balance = 0.0
 
         # Sell
-        elif df.loc[i, 'Sell_Signal'] and position > 0:
+        elif df.iloc[i]['Sell_Signal'] and position > 0:
             balance = position * price * (1 - transaction_fee)
             position = 0.0
 
@@ -44,6 +48,7 @@ def backtest_strategy(df: pd.DataFrame, initial_balance: float = 10000,
                 balance = position * price * (1 - transaction_fee)
                 position = 0.0
 
+        # Append portfolio value
         portfolio_values.append(balance + position * price)
 
     return pd.Series(portfolio_values, index=df.index)
