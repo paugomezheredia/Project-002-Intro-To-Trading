@@ -25,4 +25,11 @@ To execute this project correctly we need to create a virtual envitonment (venv)
 
 ## Running Project
     
+1.- Run Project from terminal:
 
+    - for Mac / Linux users: python main.py
+
+    - for Windows users: py main.py
+
+As an outpur we obtain the metrics of the project's final results.
+    
